@@ -47,12 +47,14 @@ def parse_data(movie: MovieInfo):
     movie.title = get_list_first(title)
     movie.genre = genre
     movie.actress = actress
-    movie.duration = str(strftime_to_minutes(get_list_first(duration_str)))
     movie.publish_date = get_list_first(publish_date)
     movie.publisher = get_list_first(publisher)
     movie.uncensored = uncensored
     movie.preview_pics = preview_pics
     movie.preview_video = get_list_first(preview_video)
+
+    if duration_str and len(duration_str) > 0:
+        movie.duration = str(strftime_to_minutes(duration_str[0]))
 
     # FC2的封面是220x220的，和正常封面尺寸、比例都差太多。如果有预览图片，则使用第一张预览图作为封面
     if movie.preview_pics:
