@@ -33,8 +33,9 @@ def parse_data(movie: MovieInfo):
     cover_tag = container.xpath("//div[@class='single-video']")
     if len(cover_tag) > 0:
         video_tag = cover_tag[0].find('video')
-        # URL首尾竟然也有空格……
-        movie.cover = video_tag.get('data-poster').strip()
+        if video_tag :
+            # URL首尾竟然也有空格……
+            movie.cover = video_tag.get('data-poster').strip()
         # 预览影片改为blob了，无法获取
         # movie.preview_video = video_tag.find('source').get('src').strip()
     else:
@@ -78,9 +79,9 @@ def parse_data(movie: MovieInfo):
 if __name__ == "__main__":
     import pretty_errors
     pretty_errors.configure(display_link=True)
-    logger.root.handlers[1].level = logging.DEBUG
+    # logger.root.handlers[1].level = logging.DEBUG
 
-    movie = MovieInfo('FC2-718323')
+    movie = MovieInfo('FC2-2764073')
     try:
         parse_data(movie)
         print(movie)

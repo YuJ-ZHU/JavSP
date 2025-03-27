@@ -70,7 +70,7 @@ if __name__ == "__main__":
     pretty_errors.configure(display_link=True)
     logger.root.handlers[1].level = logging.DEBUG
 
-    movie = MovieInfo('FC2-4497837')
+    movie = MovieInfo('FC2-1081448')
     try:
         parse_data(movie)
         print(movie)
