@@ -581,6 +581,8 @@ def error_exit(success, err_info):
     """检查业务逻辑是否成功完成，如果失败则报错退出程序"""
     if not success:
         logger.error(err_info)
+        if not Cfg().other.auto_exit:
+            input("按回车键退出...")
         sys.exit(1)
 
 
@@ -619,6 +621,9 @@ def entry():
         reviewMovieID(recognized, root)
     RunNormalMode(recognized + recognize_fail)
 
+    if not Cfg().other.auto_exit:
+        input("按回车键退出...")
+    
     sys.exit(0)
 
 if __name__ == "__main__":
