@@ -489,24 +489,27 @@ def RunNormalMode(all_movies):
                 inner_bar.set_description('下载剧照')
                 if movie.info.preview_pics:
                     extrafanartdir = movie.save_dir + '/extrafanart'
-                    os.mkdir(extrafanartdir)
+                    if not os.path.exists(extrafanartdir):
+                        os.mkdir(extrafanartdir)
+
                     for (id, pic_url) in enumerate(movie.info.preview_pics):
-                        inner_bar.set_description(f"Downloading extrafanart {id} from url: {pic_url}")
-                                                                                                                                
+                        inner_bar.set_description(f"Downloading extrafanart {id} from url: {pic_url}")                                                                                                    
                         fanart_destination = f"{extrafanartdir}/{id}.png"
-                        try:
-                            info = download(pic_url, fanart_destination)
-                            if valid_pic(fanart_destination):
-                                filesize = get_fmt_size(pic_path)
-                                width, height = get_pic_size(pic_path)
-                                elapsed = time.strftime("%M:%S", time.gmtime(info['elapsed']))
-                                speed = get_fmt_size(info['rate']) + '/s'
-                                logger.info(f"已下载剧照{pic_url} {id}.png: {width}x{height}, {filesize} [{elapsed}, {speed}]")
-                            else:
+                        if not os.path.exists(fanart_destination):
+                            try:
+                                info = download(pic_url, fanart_destination)
+                                if valid_pic(fanart_destination):
+                                    filesize = get_fmt_size(pic_path)
+                                    width, height = get_pic_size(pic_path)
+                                    elapsed = time.strftime("%M:%S", time.gmtime(info['elapsed']))
+                                    speed = get_fmt_size(info['rate']) + '/s'
+                                    logger.info(f"已下载剧照{pic_url} {id}.png: {width}x{height}, {filesize} [{elapsed}, {speed}]")
+                                else:
+                                    check_step(False, f"下载剧照{id}: {pic_url}失败")
+                            except:
                                 check_step(False, f"下载剧照{id}: {pic_url}失败")
-                        except:
-                            check_step(False, f"下载剧照{id}: {pic_url}失败")
-                        time.sleep(scrape_interval)
+                            time.sleep(scrape_interval)
+
                 check_step(True)
 
             inner_bar.set_description('写入NFO')
