@@ -25,8 +25,8 @@ def parse_data(movie: MovieInfo):
         raise MovieNotFoundError(__name__, movie.dvdid)
 
     html = resp2html(r)
-    container = html.xpath("//div[@class='col-md-9 px-0']")[0]
-    title = container.xpath("div[@class='col-12 mb-3']/h1/strong/text()")[0]
+    container = html.xpath("//div[@class='col-md-9 px-1 px-md-0']")[0]
+    title = container.xpath("div[@class='mb-3 px-1']/h1/strong/text()")[0]
     # 竟然还在标题里插广告，真的疯了。要不是我已经写了抓取器，才懒得维护这个破站
     title = title.replace('  | JAV目錄大全 | 每日更新', '')
     title = title.replace(' 免費在線看', '').replace(' 免費AV在線看', '')
@@ -43,7 +43,7 @@ def parse_data(movie: MovieInfo):
         if cover_img_tag:
             movie.cover = cover_img_tag[0].strip()
     info = container.xpath("//div[@class='card-body']")[0]
-    publish_date = info.xpath("div/span[contains(text(), '日期:')]")[0].getnext().text
+    publish_date = info.xpath("div/span[contains(text(), '發佈於:')]")[0].getnext().text
     duration = info.xpath("div/span[contains(text(), '時長:')]")[0].getnext().text.replace('分鐘', '')
     producer = info.xpath("div/span[contains(text(), '製作:')]/following-sibling::a/span/text()")
     if producer:
