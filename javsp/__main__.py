@@ -528,7 +528,7 @@ def RunNormalMode(all_movies):
             return_movies.append(movie)
         except Exception as e:
             logger.debug(e, exc_info=True)
-            logger.error(f'整理失败: {e}')
+            logger.error(f'整理失败: [{movie.dvdid}] {e}')
         finally:
             inner_bar.close()
     return return_movies
