@@ -438,6 +438,7 @@ def RunNormalMode(all_movies):
         total_step += 1
 
     return_movies = []
+    fail_movies = []
     for movie in outer_bar:
         try:
             # 初始化本次循环要整理影片任务
@@ -527,11 +528,12 @@ def RunNormalMode(all_movies):
                 time.sleep(Cfg().crawler.sleep_after_scraping.total_seconds())
             return_movies.append(movie)
         except Exception as e:
+            fail_movies.append(movie)
             logger.debug(e, exc_info=True)
             logger.error(f'整理失败: [{movie.dvdid}] {e}')
         finally:
             inner_bar.close()
-    return return_movies
+    return return_movies, fail_movies
 
 
 def download_cover(covers, fanart_path, big_covers=[]):
@@ -622,7 +624,14 @@ def entry():
     logger.info(f'扫描影片文件：共找到 {movie_count} 部影片')
     if Cfg().scanner.manual:
         reviewMovieID(recognized, root)
-    RunNormalMode(recognized + recognize_fail)
+
+    successList,failList = RunNormalMode(recognized + recognize_fail)
+
+    # 列出所有失败影片，方便后续处理
+    if len(failList) > 0:
+        logger.error("失败影片：")
+        for failMovie in failList:
+            logger.error(failMovie.dvdid)
 
     if not Cfg().other.auto_exit:
         input("按回车键退出...")
