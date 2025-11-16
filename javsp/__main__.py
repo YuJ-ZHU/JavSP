@@ -615,6 +615,7 @@ def entry():
     # 导入抓取器，必须在chdir之前
     import_crawlers()
     os.chdir(root)
+    existing_completed = get_existing_summary_avids() if Cfg().summarizer.move_files else set()
 
     print(f'扫描影片文件...')
     recognized = scan_movies(root)
@@ -622,6 +623,24 @@ def entry():
     recognize_fail = []
     error_exit(movie_count, '未找到影片文件')
     logger.info(f'扫描影片文件：共找到 {movie_count} 部影片')
+    if existing_completed:
+        filtered_movies = []
+        skipped_movies = []
+        for movie in recognized:
+            dup_key = movie_duplicate_key(movie)
+            if dup_key and dup_key in existing_completed:
+                skipped_movies.append(movie)
+                logger.info(f"跳过已整理影片: {movie.dvdid or movie.cid}")
+            else:
+                filtered_movies.append(movie)
+        if skipped_movies:
+            logger.info(f'因重复已跳过 {len(skipped_movies)} 部影片')
+        recognized = filtered_movies
+    if not recognized:
+        logger.info('扫描到的影片均已在整理完成目录中，程序结束')
+        if not Cfg().other.auto_exit:
+            input("按回车键退出...")
+        sys.exit(0)
     if Cfg().scanner.manual:
         reviewMovieID(recognized, root)
 
