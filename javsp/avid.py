@@ -36,6 +36,10 @@ def get_id(filepath_str: str) -> str:
         match = re.search(r'259LUXU-(\d+)', norm, re.I)
         if match:
             return '259LUXU-' + match.group(1)
+    elif 'CPZ69' in norm:
+        match = re.search(r'CPZ69[-_]*(\d+)', norm, re.I)
+        if match:
+            return 'CPZ69-' + match.group(1)
 
     else:
         # 先尝试移除可疑域名进行匹配，如果匹配不到再使用原始文件名进行匹配
