@@ -7,7 +7,8 @@ from shutil import rmtree
 
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from javsp.file import scan_movies
+from javsp.file import scan_movies, get_existing_summary_avids, movie_duplicate_key
+from javsp.datatype import Movie
 
 
 tmp_folder = 'TMP_' + ''.join(random.choices(string.ascii_uppercase, k=6))
@@ -226,3 +227,19 @@ def test_scan_movies__n_video_with_ad(prepare_files):
     assert len(movies) == 2
     assert movies[0].dvdid == 'ABC-123' and movies[1].dvdid == 'DEF-456'
     assert all(len(i.files) == 1 for i in movies)
+
+
+def test_get_existing_summary_avids(tmp_path):
+    base = tmp_path / '#整理完成'
+    (base / 'ActressA' / '[ABC-123] Title A').mkdir(parents=True)
+    (base / 'ActressB' / '[DEF-456-UC] Title B').mkdir(parents=True)
+    (base / 'ActressC' / '[GHI-789-C] Title C').mkdir(parents=True)
+    pattern = f"{base}/{{actress}}/[{{num}}] {{title}}"
+    existing = get_existing_summary_avids(pattern)
+    assert existing == {'ABC-123', 'DEF-456', 'GHI-789'}
+
+
+def test_movie_duplicate_key_handles_suffix():
+    movie = Movie('ABC-123')
+    movie.files = ['ABC-123-C.mp4']
+    assert movie_duplicate_key(movie) == 'ABC-123'

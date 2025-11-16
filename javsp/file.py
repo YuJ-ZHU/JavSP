@@ -10,7 +10,9 @@ from sys import platform
 from typing import List
 
 
-__all__ = ['scan_movies', 'get_fmt_size', 'get_remaining_path_len', 'replace_illegal_chars', 'get_failed_when_scan', 'find_subtitle_in_dir']
+__all__ = ['scan_movies', 'get_fmt_size', 'get_remaining_path_len', 'replace_illegal_chars',
+           'get_failed_when_scan', 'find_subtitle_in_dir', 'get_existing_summary_avids',
+           'movie_duplicate_key']
 
 
 from javsp.avid import *
@@ -20,6 +22,114 @@ from javsp.datatype import Movie
 
 logger = logging.getLogger(__name__)
 failed_items = []
+
+_DUPLICATE_SUFFIXES = ('-UC', '-C')
+_PLACEHOLDER_PATTERN = re.compile(r'\{([^}]+)\}')
+
+
+def _normalize_duplicate_avid(value: str | None) -> str | None:
+    """Upper-case番号并移除-C/-UC后缀，便于重复匹配"""
+    if not value:
+        return None
+    avid = value.strip().upper()
+    for suffix in _DUPLICATE_SUFFIXES:
+        if avid.endswith(suffix):
+            avid = avid[:-len(suffix)]
+            break
+    return avid
+
+
+def _split_output_pattern(pattern: str) -> tuple[str, list[str]]:
+    """将路径模板拆分为纯文本前缀和剩余的段列表"""
+    normalized = pattern.replace('\\', '/').strip()
+    first_placeholder = normalized.find('{')
+    if first_placeholder == -1:
+        base = normalized
+        tail = ''
+    else:
+        last_sep = normalized.rfind('/', 0, first_placeholder)
+        if last_sep == -1:
+            base = ''
+            tail = normalized
+        else:
+            base = normalized[:last_sep]
+            tail = normalized[last_sep+1:]
+    base = base.rstrip('/')
+    segments = [seg for seg in tail.split('/') if seg]
+    return base, segments
+
+
+def _compile_segment_regex(segment: str) -> re.Pattern:
+    """将路径段转换为匹配同级目录名称的正则表达式"""
+    parts = []
+    last = 0
+    for match in _PLACEHOLDER_PATTERN.finditer(segment):
+        literal = segment[last:match.start()]
+        parts.append(re.escape(literal))
+        name = match.group(1).strip()
+        if name == 'num':
+            parts.append(r'(?P<num>[^/]+)')
+        else:
+            parts.append(r'[^/]+')
+        last = match.end()
+    parts.append(re.escape(segment[last:]))
+    expr = ''.join(parts) or r'.+'
+    return re.compile(rf'^{expr}$')
+
+
+def get_existing_summary_avids(pattern: str | None = None) -> set[str]:
+    """根据整理路径模板收集#整理完成目录下已有的番号集合"""
+    if pattern is None:
+        pattern = Cfg().summarizer.path.output_folder_pattern
+    if '{num}' not in pattern:
+        return set()
+    base_literal, segments = _split_output_pattern(pattern)
+    if not segments:
+        return set()
+    base_dir = base_literal or '.'
+    base_dir = os.path.normpath(base_dir.replace('/', os.sep))
+    if not os.path.isdir(base_dir):
+        return set()
+    compiled_segments = [_compile_segment_regex(seg) for seg in segments]
+    candidates = [(base_dir, {})]
+    for regex in compiled_segments:
+        next_candidates = []
+        for current_path, captured in candidates:
+            if not os.path.isdir(current_path):
+                continue
+            try:
+                entries = os.listdir(current_path)
+            except OSError:
+                continue
+            for name in entries:
+                full_path = os.path.join(current_path, name)
+                if not os.path.isdir(full_path):
+                    continue
+                match = regex.match(name)
+                if not match:
+                    continue
+                data = captured.copy()
+                num_value = match.groupdict().get('num')
+                if num_value:
+                    data['num'] = num_value
+                next_candidates.append((full_path, data))
+        candidates = next_candidates
+        if not candidates:
+            break
+    existing = set()
+    for _, capture in candidates:
+        normalized = _normalize_duplicate_avid(capture.get('num'))
+        if normalized:
+            existing.add(normalized)
+    return existing
+
+
+def movie_duplicate_key(movie: Movie) -> str | None:
+    """生成用于重复判断的番号（忽略-C/-UC后缀）"""
+    avid = movie.dvdid or movie.cid
+    if not avid:
+        return None
+    return _normalize_duplicate_avid(avid + movie.attr_str)
 
 
 def scan_movies(root: str) -> List[Movie]:
