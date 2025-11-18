@@ -109,3 +109,11 @@ def test_by_folder_name2(prepare_files):
 @pytest.mark.parametrize('files', [('ABC-123/CDF-456.mp4',)])
 def test_by_folder_name3(prepare_files):
     assert 'CDF-456' == get_id('ABC-123/CDF-456.mp4')
+
+def test_cpz69():
+    assert 'CPZ69-123' == get_id('CPZ69-123.mp4')
+    assert 'CPZ69-123' == get_id('cpz69_123.avi')
+    # 原逻辑仅支持'-'或'_'作为分隔，因此这里使用'-'
+    assert 'CPZ69-456' == get_id('CPZ69-456 trailer')
+    assert 'CPZ69-789' == get_id('some_prefix_CPZ69-789_some_suffix.mkv')
+
