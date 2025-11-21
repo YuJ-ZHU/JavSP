@@ -32,9 +32,15 @@ def _normalize_duplicate_avid(value: str | None) -> str | None:
     if not value:
         return None
     avid = value.strip().upper()
-    for suffix in _DUPLICATE_SUFFIXES:
-        if avid.endswith(suffix):
-            avid = avid[:-len(suffix)]
+    # 循环移除所有后缀（处理重复后缀情况）
+    while True:
+        removed = False
+        for suffix in _DUPLICATE_SUFFIXES:
+            if avid.endswith(suffix):
+                avid = avid[:-len(suffix)]
+                removed = True
+                break
+        if not removed:
             break
     return avid
 
